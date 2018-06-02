@@ -21,7 +21,7 @@ def powerSetsBinary(items):
 
 
 class Apriori:
-    def __init__(self, transactions, support, confidence, L=5):
+    def __init__(self, transactions, support, confidence, L=2):
         """
         transactions: all item_ids of all users in single group.(list of list)
         support: minimal support value(0~1)
@@ -31,6 +31,7 @@ class Apriori:
         self.transactions = transactions
         self.t_len = self.transactions.__len__()
         self.support = int(support * self.t_len + 0.5)
+        self.support_for_L1 = (int(0.15 * self.t_len + 0.5))
         self.confidence = confidence
         self.L = L
 
@@ -46,7 +47,7 @@ class Apriori:
                     L1_candidates[item] = 1
         L1 = []
         for c in L1_candidates:
-            if L1_candidates[c] >= self.support:
+            if L1_candidates[c] >= self.support_for_L1:
                 L1.append([{c}, L1_candidates[c]])
                 freq_items.append(c)
         return (freq_items, L1)
@@ -102,7 +103,7 @@ class Apriori:
         (freq_items, Ln) = self._getL1()
         print('L - 1 number =', Ln.__len__())
         frequent_sets = Ln
-        for i in range(1, self.L+1):
+        for i in range(1, self.L):
             Ln = self._getLn1(Ln)
             if Ln.__len__() == 0:
                 break

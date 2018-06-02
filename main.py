@@ -1,42 +1,53 @@
-import cluster
+from cluster import ClusterUsers
 import helper
-from time import time
 
 
-def main(user_path, item_path, user_num=None, K=None, supp=0.5, conf=0.2, L=4):
-    # --- 1 --- read data.
-    print('reading data.This might take a few minutes...')
-    t0 = time()
-    # (uii, uic) ==> (users_item_id, users_item_category)
-    (uii, uic) = helper.read_raw_data(user_path)
-    t1 = time()
-    print(t1-t0, 's')
-
-    # --- 2 --- cluster users into different groups.
-    print('clustering data...')
-    cu = cluster.ClusterUsers(uic, user_num, K, max_iterations=5)
+def prepareData(file_path, n, K):
+    uic_lists = helper.read_data(file_path)
+    print('read 5000 users done...')
+    print('clustering users...This might take a minute...')
+    cu = ClusterUsers(uic_lists, n, K)
     (centroids, groups) = cu.cluster()
-    t2 = time()
-    print(t2-t1, 's')
+    return (uic_lists, centroids, groups)
 
-    # --- 3 ---  generate associated rules & calculate importance of each rule
+
+def generateRules(uic_lists, groups, K, support, confidence):
+    results = []
     for i in range(K):
-        print(i, '--------------------------------------------------------')
-        print('groups[i].__len__() =', groups[i].__len__())
-        t3 = time()
-        uii_group = [uii[g] for g in groups[i]]
-        (items_id, rules) = helper.gen_rules(uii_group, supp, conf, L)
-        r_imp = helper.cal_imp(rules)
-        interest_scores = []
-        for z in items_id:
-            c = centroids[i]
-            interest = helper.cal_interest(rules, r_imp, uii[c], z[0])
-            if interest > 0.0:
-                interest_scores.append(interest)
-            print(interest)
-        t4 = time()
-        print(t4-t3, 's\n')
+        uic_group = [uic_lists[g] for g in groups[i]]
+        print('--------------------- begin ---------------------- groups', i)
+        print('number of group elements =', len(uic_group))
+        (items_id, rules) = helper.gen_rules(uic_group, support, confidence)
+        print('rules num =', len(rules))
+        print('----------------------- end ----------------------\n\n\n')
+        results.append((items_id, rules))
+    return results
+
+
+def evaluate(fp21, fp22, uic_lists, centroids, groups, rules):
+    (data1, data2) = helper.read_test(fp21, fp22)
+    classes = helper.assign_test(data1, uic_lists, centroids)   # 分发
+    guess_likes = helper.recommend_item(classes, data1, rules)
+    (precision, recall, fscore) = helper.scoring(data2, guess_likes)
+    print('\n\n---------------------------------------------------')
+    print('precision =', precision)
+    print('recall =', recall)
+    print('fscore =', fscore)
+
+
+def main(fp1, fp21, fp22, n1, n2, K, support, confidence):
+    (uic_lists, centroids, groups) = prepareData(fp1, n1, K)
+    rules = generateRules(uic_lists, groups, K, support, confidence)
+    evaluate(fp21, fp22, uic_lists, centroids, groups, rules)
 
 
 if __name__ == '__main__':
-    main('4239users.csv', 'train_item.csv', 4239, 50)
+    fp1 = './others/5000-100.csv'
+    fp21 = './others/1427-1118-1208.csv'  # 21 days
+    fp22 = './others/1427-1209-1218.csv'  # 10 days
+    n1 = 5000
+    n2 = 1427
+    K = 50
+    support = 0.3
+    confidence = 0.45
+    main(fp1, fp21, fp22, n1, n2, K, support, confidence)

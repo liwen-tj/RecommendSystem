@@ -1,5 +1,6 @@
 from apriori import Apriori
 
+
 transactions = [
     [1, 2, 5],
     [2, 4],

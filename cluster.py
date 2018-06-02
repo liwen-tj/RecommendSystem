@@ -1,21 +1,17 @@
-import random
 import helper
 
 
 class ClusterUsers:
-    def __init__(self, data, user_num, K=50, max_iterations=10, verbose=True):
-        """
-        data: all raw records of all users
-        """
+    def __init__(self, data, user_num, K=50, max_iterations=3, verbose=True):
         self.data = data
         self.user_num = user_num
-        assert self.user_num == self.data.__len__()  # # # # # # # # # # # #
         self.K = K
         self.max_iterations = max_iterations
         self.verbose = verbose
 
     def init_centroid(self):
-        first_centroid = random.randint(0, self.user_num - 1)
+        # first_centroid = random.randint(0, self.user_num - 1)
+        first_centroid = 10
         centroids = [first_centroid]
         max_sims_with_centroids = [[0.0, 0] for _ in range(self.user_num)]
         while centroids.__len__() < self.K:
@@ -32,7 +28,6 @@ class ClusterUsers:
                     candidate = i
             centroids.append(candidate)
         # init centroids done!!
-
         # calculate init groups
         groups = [[] for _ in range(self.K)]
         centroid_1_value = self.data[centroids[-1]]
@@ -53,8 +48,8 @@ class ClusterUsers:
             sims = [helper.cal_two(di, self.data[c]) for c in centroids]
             groups[sims.index(max(sims))].append(i)
         if self.verbose is True:
-            for g in groups:
-                print('points_num =', g.__len__())
+            for x in range(self.K):
+                print('centroid =', centroids[x], ' points_num =', groups[x].__len__())
         return groups
 
     def cal_performace(self, centroids, groups):
@@ -94,18 +89,17 @@ class ClusterUsers:
         return centroids
 
     def cluster(self):
-        if self.verbose is True:
-            print('init centroids...')
-        (centroids, groups) = self.init_centroid()
-        for i in range(self.max_iterations):
-            sims = self.cal_performace(centroids, groups)
-            print("centroids = ", centroids)
-            centroids = self.new_centroids(groups)
-            if self.verbose is True:
-                print('iteration', i, ', sims_before =', sims)
-            sims = self.cal_performace(centroids, groups)
+        # centroids = [1924, 3205, 2821, 4229, 4240, 3859, 404, 2815, 410, 284, 1566, 3744, 4890, 807, 3113, 1452, 4270, 1663, 2094, 947, 1973, 1206, 2233, 2745, 2235, 2748, 1341, 189, 1339, 833, 3012, 1605, 836, 1095, 455, 2764, 1997, 2648, 100, 3546, 2527, 3297, 4581, 3052, 622, 3055, 2552, 2170, 2684, 3581]
+        centroids = [3878, 3205, 4924, 4229, 4240, 3859, 404, 2815, 410, 284, 1566, 3744, 4890, 807, 3113, 1452, 4270, 1663, 2094, 947, 1973, 1206, 2233, 2745, 2235, 2748, 1341, 189, 1339, 833, 3012, 1605, 836, 1095, 455, 2764, 1997, 2648, 1410, 3546, 2527, 3297, 4581, 3052, 622, 3055, 2552, 2170, 1924, 999]
+        for _ in range(self.max_iterations):
             groups = self.group_users(centroids)
-            if self.verbose is True:
-                print('iteration', i, ', sims_after =', sims)
-            print('\n')
+            sims = self.cal_performace(centroids, groups)
+            print('sims = ', sims)
+            print('----------------------------------------------\n\n')
+            centroids = self.new_centroids(groups)
+        groups = self.group_users(centroids)
         return (centroids, groups)
+
+
+if __name__ == '__main__':
+    pass
